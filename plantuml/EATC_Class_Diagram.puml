@@ -1,0 +1,157 @@
+@startuml
+title EATC Tuition Booking System - UML Class Diagram
+
+skinparam classAttributeIconSize 0
+
+package "model" {
+    enum Gender {
+        MALE
+        FEMALE
+        OTHER
+    }
+
+    enum LessonDay {
+        SATURDAY
+        SUNDAY
+    }
+
+    enum TimeSlot {
+        MORNING
+        AFTERNOON
+    }
+
+    enum BookingStatus {
+        BOOKED
+        ATTENDED
+        CANCELLED
+    }
+
+    enum Rating {
+        VERY_DISSATISFIED
+        DISSATISFIED
+        OK
+        SATISFIED
+        VERY_SATISFIED
+    }
+
+    class Student {
+        - int studentId
+        - String name
+        - Gender gender
+        - LocalDate dateOfBirth
+        - String address
+        - String emergencyContactPhone
+        + getStudentId(): int
+        + getName(): String
+        + getGender(): Gender
+        + getDateOfBirth(): LocalDate
+        + getAddress(): String
+        + getEmergencyContactPhone(): String
+    }
+
+    class TuitionSubject {
+        - int subjectId
+        - String subjectName
+        - BigDecimal price
+        + getSubjectId(): int
+        + getSubjectName(): String
+        + getPrice(): BigDecimal
+    }
+
+    class Lesson {
+        + MAX_STUDENTS: int
+        - int lessonId
+        - TuitionSubject subject
+        - LocalDate lessonDate
+        - LessonDay lessonDay
+        - TimeSlot timeSlot
+        + clashesWith(other: Lesson): boolean
+        + shortName(): String
+    }
+
+    class Review {
+        - Rating rating
+        - String comment
+        - LocalDateTime createdAt
+        + getRating(): Rating
+        + getComment(): String
+        + getCreatedAt(): LocalDateTime
+    }
+
+    class Booking {
+        - int bookingId
+        - Student student
+        - Lesson lesson
+        - BookingStatus status
+        - Review review
+        - LocalDateTime createdAt
+        + changeLesson(newLesson: Lesson): void
+        + cancel(): void
+        + markAttended(): void
+        + addReview(review: Review): void
+        + isActive(): boolean
+    }
+}
+
+package "service" {
+    class TuitionCentre {
+        - Map<Integer, Student> students
+        - Map<Integer, TuitionSubject> subjects
+        - Map<Integer, Lesson> lessons
+        - Map<Integer, Booking> bookings
+        + addStudent(...): Student
+        + addSubject(...): TuitionSubject
+        + addLesson(...): Lesson
+        + bookLesson(studentId, lessonId): Booking
+        + changeBooking(bookingId, newLessonId): Booking
+        + cancelBooking(bookingId): Booking
+        + checkInStudent(bookingId): Booking
+        + addReview(bookingId, ratingValue, comment): Booking
+        + getAverageRating(lessonId): double
+        + calculateIncomeForSubject(subjectId): BigDecimal
+        + findHighestIncomeSubject(): Optional<TuitionSubject>
+    }
+
+    class ReportService {
+        - TuitionCentre centre
+        + lessonAttendanceAndRatingReport(): String
+        + highestIncomeSubjectReport(): String
+    }
+
+    class DataSeeder {
+        + createSampleCentre(): TuitionCentre
+    }
+}
+
+package "app" {
+    class ConsoleApp {
+        - TuitionCentre centre
+        - ReportService reportService
+        - Scanner scanner
+        + main(args: String[]): void
+        + run(): void
+    }
+}
+
+TuitionSubject "1" <-- "many" Lesson : subject
+Student "1" <-- "many" Booking : student
+Lesson "1" <-- "many" Booking : lesson
+Booking "1" *-- "0..1" Review : review
+Review "1" --> "1" Rating : rating
+
+Student --> Gender
+Lesson --> LessonDay
+Lesson --> TimeSlot
+Booking --> BookingStatus
+
+TuitionCentre o-- Student
+TuitionCentre o-- TuitionSubject
+TuitionCentre o-- Lesson
+TuitionCentre o-- Booking
+
+ReportService --> TuitionCentre
+ConsoleApp --> TuitionCentre
+ConsoleApp --> ReportService
+DataSeeder --> TuitionCentre
+
+@enduml
